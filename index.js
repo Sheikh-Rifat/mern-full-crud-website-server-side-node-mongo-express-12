@@ -1,7 +1,9 @@
 const express = require("express");
 const { MongoClient } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
-
+const stripe = require("stripe")(
+  "sk_test_51K4oTFGArCfxeiQOzr5ZydUZ0uijIqBNfZz3l09AYsqPsSPsVgDGtEtS6gLtZNfkdlIArRmZeFWasf05GN5YlwjC00FC6e02t0"
+);
 // getting cors
 const cors = require("cors");
 
@@ -148,6 +150,14 @@ async function run() {
       res.json(result);
     });
 
+    // user orders for payment
+    app.get("/userorders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userOrdersCollection.findOne(query);
+      res.json(result);
+    });
+
     // getting all reviews
     app.get("/reviews", async (req, res) => {
       const cursor = reviewCollection.find({});
@@ -216,6 +226,32 @@ async function run() {
       // console.log(id);
       const query = { _id: ObjectId(id) };
       const result = await userOrdersCollection.deleteOne(query);
+      res.json(result);
+    });
+
+    // payment
+    app.post("/create-payment-intent", async (req, res) => {
+      const paymentInfo = req.body;
+      const amount = paymentInfo.price * 100;
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.json({ clientSecret: paymentIntent.client_secret });
+    });
+
+    app.put("/userOrders/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const payment = req.body;
+      const updateDoc = {
+        $set: {
+          paymnet: payment,
+        },
+      };
+      const result = await userOrdersCollection.updateOne(filter, updateDoc);
       res.json(result);
     });
   } finally {
