@@ -267,5 +267,5 @@ app.get("/", (req, res) => {
 
 // listening if server running smoothly
 app.listen(port, () => {
-  console.log("server of a-12 is running at", port);
+  console.log("server of a-12 is running at port", port);
 });
